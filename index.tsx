@@ -119,7 +119,7 @@ const VoiceChannelContext: NavContextMenuPatchCallback = (children, { channel }:
         PermissionsBits.MOVE_MEMBERS,
         PermissionsBits.MUTE_MEMBERS,
         PermissionsBits.DEAFEN_MEMBERS,
-    ].map(p => useStateFromStores([PermissionStore], () => true));//PermissionStore.canWithPartialContext(p, { channelId: channel.id })));
+    ].map(p => useStateFromStores([PermissionStore], () => PermissionStore.canWithPartialContext(p, { channelId: channel.id })));
 
     children.splice(
         -1,
