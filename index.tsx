@@ -10,7 +10,7 @@ import { makeRange } from "@components/PluginSettings/components";
 import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
 import { findStoreLazy } from "@webpack";
-import { GuildChannelStore, Menu, React, RestAPI, UserStore } from "@webpack/common";
+import { GuildChannelStore, Menu, PermissionsBits, PermissionStore, React, RestAPI, UserStore, useStateFromStores } from "@webpack/common";
 import type { Channel } from "discord-types/general";
 
 const VoiceStateStore = findStoreLazy("VoiceStateStore");
@@ -62,8 +62,18 @@ const VoiceChannelContext: NavContextMenuPatchCallback = (children, { channel }:
     const userCount = Object.keys(VoiceStateStore.getVoiceStatesForChannel(channel.id)).length;
     if (userCount === 0) return;
 
-    const guildChannels: { VOCAL: { channel: Channel, comparator: number }[] } = GuildChannelStore.getChannels(channel.guild_id);
+    const guildChannels: { VOCAL: { channel: Channel, comparator: number; }[]; } = GuildChannelStore.getChannels(channel.guild_id);
     const voiceChannels = guildChannels.VOCAL.map(({ channel }) => channel).filter(({ id }) => id !== channel.id);
+
+    const [
+        movePermission,
+        mutePermission,
+        deafPermission,
+    ] = [
+        PermissionsBits.MOVE_MEMBERS,
+        PermissionsBits.MUTE_MEMBERS,
+        PermissionsBits.DEAFEN_MEMBERS,
+    ].map(p => useStateFromStores([PermissionStore], () => PermissionStore.canWithPartialContext(p, { channelId: channel.id })));
 
     children.splice(
         -1,
@@ -73,52 +83,52 @@ const VoiceChannelContext: NavContextMenuPatchCallback = (children, { channel }:
             key="voice-tools"
             id="voice-tools"
         >
-            <Menu.MenuItem
+            {movePermission && <Menu.MenuItem
                 key="voice-tools-disconnect-all"
                 id="voice-tools-disconnect-all"
                 label="Disconnect all"
                 action={() => sendPatch(channel, {
                     channel_id: null,
                 })}
-            />
+            />}
 
-            <Menu.MenuItem
+            {mutePermission && <Menu.MenuItem
                 key="voice-tools-mute-all"
                 id="voice-tools-mute-all"
                 label="Mute all"
                 action={() => sendPatch(channel, {
                     mute: true,
                 })}
-            />
+            />}
 
-            <Menu.MenuItem
+            {mutePermission && <Menu.MenuItem
                 key="voice-tools-unmute-all"
                 id="voice-tools-unmute-all"
                 label="Unmute all"
                 action={() => sendPatch(channel, {
                     mute: false,
                 })}
-            />
+            />}
 
-            <Menu.MenuItem
+            {deafPermission && <Menu.MenuItem
                 key="voice-tools-deafen-all"
                 id="voice-tools-deafen-all"
                 label="Deafen all"
                 action={() => sendPatch(channel, {
                     deaf: true,
                 })}
-            />
+            />}
 
-            <Menu.MenuItem
+            {deafPermission && <Menu.MenuItem
                 key="voice-tools-undeafen-all"
                 id="voice-tools-undeafen-all"
                 label="Undeafen all"
                 action={() => sendPatch(channel, {
                     deaf: false,
                 })}
-            />
+            />}
 
-            <Menu.MenuItem
+            {movePermission && <Menu.MenuItem
                 label="Move all"
                 key="voice-tools-move-all"
                 id="voice-tools-move-all"
@@ -136,7 +146,7 @@ const VoiceChannelContext: NavContextMenuPatchCallback = (children, { channel }:
                     );
                 })}
 
-            </Menu.MenuItem>
+            </Menu.MenuItem>}
         </Menu.MenuItem>
     );
 };
