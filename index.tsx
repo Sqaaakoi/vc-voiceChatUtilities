@@ -26,6 +26,7 @@ const ClientActions: {
     toggleSelfMute: () => void;
     toggleLocalMute: (userId: string) => void;
     toggleLocalSoundboardMute: (userId: string) => void;
+    setDisableLocalVideo: (userId: string, state: "MANUAL_ENABLED" | "DISABLED") => void;
 } = findByPropsLazy("toggleSelfMute", "toggleLocalMute", "toggleLocalSoundboardMute");
 
 async function runSequential<T>(promises: (() => Promise<T>)[]): Promise<T[]> {
@@ -80,6 +81,12 @@ const actions: Record<string, (channel: Channel, newChannel?: Channel) => void> 
     },
     unmuteSoundboards: c => {
         getVoiceStates(c).forEach(({ userId }) => { SoundboardStore.isLocalSoundboardMuted(userId) && ClientActions.toggleLocalSoundboardMute(userId); });
+    },
+    disableVideo: c => {
+        getVoiceStates(c).forEach(({ userId }) => { ClientActions.setDisableLocalVideo(userId, "DISABLED"); });
+    },
+    enableVideo: c => {
+        getVoiceStates(c).forEach(({ userId }) => { ClientActions.setDisableLocalVideo(userId, "MANUAL_ENABLED"); });
     },
 
     serverMute: c => sendPatch(c, { mute: true }, settings.store.includeSelfInActions),
@@ -146,7 +153,9 @@ const VoiceChannelContext: NavContextMenuPatchCallback = (children, { channel }:
                 />
 
                 {hasOtherUsers && <>
-                    {/* The client doesn't expose muting your own soundboard, so even if you allow taking action on yourself, this should only be shown if other users are in VC */}
+                    {/* The client doesn't expose muting your own soundboard or enabling, so even if you allow taking action on yourself, this should only be shown if other users are in VC */}
+                    {/* Same applies for camera */}
+
                     <Menu.MenuItem
                         key="voice-tools-soundboard-sound-mute-all"
                         id="voice-tools-soundboard-sound-mute-all"
@@ -158,6 +167,19 @@ const VoiceChannelContext: NavContextMenuPatchCallback = (children, { channel }:
                         id="voice-tools-soundboard-sound-unmute-all"
                         label="Unmute all soundboards"
                         action={() => actions.unmuteSoundboards(channel)}
+                    />
+
+                    <Menu.MenuItem
+                        key="voice-tools-disable-video-all"
+                        id="voice-tools-disable-video-all"
+                        label="Disable all cameras"
+                        action={() => actions.disableVideo(channel)}
+                    />
+                    <Menu.MenuItem
+                        key="voice-tools-enable-video-all"
+                        id="voice-tools-enable-video-all"
+                        label="Enable all cameras"
+                        action={() => actions.enableVideo(channel)}
                     />
                 </>}
             </Menu.MenuGroup>
