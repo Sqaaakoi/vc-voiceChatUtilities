@@ -212,7 +212,6 @@ const VoiceChannelContext: NavContextMenuPatchCallback = (children, { channel }:
                     <Menu.MenuItem
                         key="voice-tools-server-undeafen-all"
                         id="voice-tools-server-undeafen-all"
-                        color="danger"
                         label="Server undeafen all"
                         action={() => actions.serverUndeafen(channel)}
                     />
